@@ -1,0 +1,6 @@
+{
+  "name": "AI Quiz Generator",
+  "description": "Generate custom quizzes from lecture notes using the Gemini API.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

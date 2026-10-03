@@ -1,0 +1,912 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Quiz Generator</title>
+    <meta name="description" content="Generate custom quizzes from lecture notes using the Gemini API." />
+    <meta property="og:title" content="AI Quiz Generator" />
+    <meta property="og:description" content="Generate custom quizzes from lecture notes using the Gemini API." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <style>
+      /* Base Resets & Typography */
+      *, *::before, *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        background: linear-gradient(145deg, #f8fafc 0%, #eef2f6 100%);
+        color: #1e293b;
+        line-height: 1.6;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 24px 16px;
+      }
+
+      /* Main Page Wrapper */
+      .page-wrapper {
+        width: 100%;
+        max-width: 680px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      /* Card Container */
+      .card {
+        background-color: #ffffff;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.06), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+        padding: 36px 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        transition: all 0.2s ease;
+      }
+
+      /* Header & Centered Title */
+      .header-section {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #4f46e5;
+        background-color: #eef2ff;
+        padding: 4px 12px;
+        border-radius: 9999px;
+        border: 1px solid #e0e7ff;
+      }
+
+      h1 {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: #0f172a;
+        letter-spacing: -0.025em;
+        text-align: center;
+      }
+
+      .subtitle {
+        font-size: 0.95rem;
+        color: #64748b;
+        max-width: 480px;
+        text-align: center;
+      }
+
+      /* Form Section */
+      .form-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .input-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .input-label-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .input-label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #334155;
+      }
+
+      .sample-link {
+        background: none;
+        border: none;
+        color: #4f46e5;
+        font-size: 0.8rem;
+        font-weight: 500;
+        cursor: pointer;
+        text-decoration: underline;
+        padding: 0;
+      }
+
+      .sample-link:hover {
+        color: #3730a3;
+      }
+
+      textarea {
+        width: 100%;
+        font-family: inherit;
+        font-size: 0.95rem;
+        color: #0f172a;
+        background-color: #f8fafc;
+        border: 1.5px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 14px;
+        outline: none;
+        min-height: 180px;
+        resize: vertical;
+        line-height: 1.55;
+        transition: all 0.2s ease-in-out;
+      }
+
+      textarea::placeholder {
+        color: #94a3b8;
+      }
+
+      textarea:focus {
+        background-color: #ffffff;
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+      }
+
+      /* Buttons */
+      .primary-btn {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+        color: #ffffff;
+        font-family: inherit;
+        font-size: 1rem;
+        font-weight: 600;
+        padding: 14px 24px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+        transition: all 0.2s ease-in-out;
+      }
+
+      .primary-btn:hover:not(:disabled) {
+        background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%);
+        box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
+        transform: translateY(-1px);
+      }
+
+      .primary-btn:active:not(:disabled) {
+        transform: translateY(0);
+      }
+
+      .primary-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .secondary-btn {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        background-color: #f1f5f9;
+        color: #334155;
+        font-family: inherit;
+        font-size: 0.95rem;
+        font-weight: 600;
+        padding: 12px 20px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .secondary-btn:hover {
+        background-color: #e2e8f0;
+        color: #0f172a;
+      }
+
+      /* Error Alert Box */
+      .error-alert {
+        display: none;
+        background-color: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #991b1b;
+        padding: 14px 16px;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        align-items: flex-start;
+        gap: 10px;
+        line-height: 1.5;
+      }
+
+      .error-alert.visible {
+        display: flex;
+      }
+
+      /* Loading State */
+      .loading-card {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 40px 20px;
+        gap: 16px;
+      }
+
+      .loading-card.visible {
+        display: flex;
+      }
+
+      .spinner {
+        width: 44px;
+        height: 44px;
+        border: 4px solid #e0e7ff;
+        border-top-color: #4f46e5;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .loading-title {
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: #0f172a;
+      }
+
+      .loading-desc {
+        font-size: 0.875rem;
+        color: #64748b;
+      }
+
+      /* Quiz Container */
+      #quiz-container {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      /* Quiz Header & Progress */
+      .quiz-header {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .quiz-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.875rem;
+        font-weight: 600;
+      }
+
+      .q-count {
+        color: #4f46e5;
+        background-color: #eef2ff;
+        padding: 3px 10px;
+        border-radius: 9999px;
+      }
+
+      .score-pill {
+        color: #475569;
+        background-color: #f1f5f9;
+        padding: 3px 10px;
+        border-radius: 9999px;
+      }
+
+      .progress-track {
+        width: 100%;
+        height: 8px;
+        background-color: #f1f5f9;
+        border-radius: 9999px;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #4f46e5, #6366f1);
+        border-radius: 9999px;
+        transition: width 0.3s ease;
+      }
+
+      /* Question Card */
+      .question-text {
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: #0f172a;
+        line-height: 1.5;
+        margin-top: 4px;
+      }
+
+      /* Options Grid */
+      .options-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .option-btn {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        width: 100%;
+        text-align: left;
+        background-color: #ffffff;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 14px 16px;
+        font-family: inherit;
+        font-size: 0.95rem;
+        color: #1e293b;
+        cursor: pointer;
+        transition: all 0.15s ease-in-out;
+      }
+
+      .option-btn:hover:not(:disabled) {
+        border-color: #a5b4fc;
+        background-color: #f8fafc;
+        transform: translateY(-1px);
+      }
+
+      .option-btn:disabled {
+        cursor: default;
+      }
+
+      .option-letter {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 6px;
+        background-color: #f1f5f9;
+        color: #475569;
+        font-size: 0.8rem;
+        font-weight: 700;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+
+      .option-text {
+        flex: 1;
+        line-height: 1.45;
+      }
+
+      /* Answer Status Styles */
+      .option-btn.selected-correct {
+        background-color: #f0fdf4 !important;
+        border-color: #22c55e !important;
+        color: #15803d !important;
+      }
+
+      .option-btn.selected-correct .option-letter {
+        background-color: #22c55e !important;
+        color: #ffffff !important;
+      }
+
+      .option-btn.selected-wrong {
+        background-color: #fef2f2 !important;
+        border-color: #ef4444 !important;
+        color: #b91c1c !important;
+      }
+
+      .option-btn.selected-wrong .option-letter {
+        background-color: #ef4444 !important;
+        color: #ffffff !important;
+      }
+
+      .option-btn.reveal-correct {
+        background-color: #f0fdf4 !important;
+        border-color: #86efac !important;
+        color: #166534 !important;
+      }
+
+      .option-btn.reveal-correct .option-letter {
+        background-color: #16a34a !important;
+        color: #ffffff !important;
+      }
+
+      /* Explanation Feedback Box */
+      .feedback-box {
+        padding: 16px;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        animation: fadeIn 0.25s ease-out;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .feedback-box.correct {
+        background-color: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        color: #14532d;
+      }
+
+      .feedback-box.wrong {
+        background-color: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #7f1d1d;
+      }
+
+      .feedback-status {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 700;
+        font-size: 1rem;
+      }
+
+      .feedback-text {
+        font-weight: 400;
+        color: #334155;
+      }
+
+      /* Results View */
+      .results-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 20px;
+        padding: 16px 0;
+      }
+
+      .results-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+      }
+
+      .results-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #0f172a;
+      }
+
+      .score-display {
+        font-size: 2.25rem;
+        font-weight: 800;
+        color: #4f46e5;
+        letter-spacing: -0.02em;
+      }
+
+      .score-message {
+        font-size: 0.95rem;
+        color: #64748b;
+        max-width: 440px;
+      }
+
+      .results-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+        margin-top: 10px;
+      }
+
+      /* Responsive Breakpoint */
+      @media (max-width: 640px) {
+        body {
+          padding: 16px 12px;
+          align-items: flex-start;
+        }
+
+        .card {
+          padding: 24px 18px;
+          border-radius: 14px;
+        }
+
+        h1 {
+          font-size: 1.5rem;
+        }
+
+        .subtitle {
+          font-size: 0.875rem;
+        }
+
+        textarea {
+          min-height: 150px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-wrapper">
+      <main class="card">
+        <!-- Centered Title Section -->
+        <header class="header-section">
+          <span class="badge">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+            </svg>
+            Study Tool
+          </span>
+          <h1>AI Quiz Generator</h1>
+          <p class="subtitle">Turn your lecture notes into an interactive 8-question practice quiz.</p>
+        </header>
+
+        <!-- Friendly Error Banner -->
+        <div id="error-alert" class="error-alert" role="alert">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; margin-top: 2px;">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <div id="error-message-text" style="flex: 1;">Something went wrong. Please try again.</div>
+        </div>
+
+        <!-- Input Form Section (Hidden when taking quiz) -->
+        <section id="input-section" class="form-grid">
+          <!-- Textarea for Lecture Notes -->
+          <div class="input-group">
+            <div class="input-label-row">
+              <label for="lecture-notes" class="input-label">Lecture Notes</label>
+              <button type="button" id="sample-notes-btn" class="sample-link">Paste sample notes</button>
+            </div>
+            <textarea
+              id="lecture-notes"
+              name="lectureNotes"
+              rows="9"
+              placeholder="Paste your lecture notes, study guide, or textbook chapter here..."
+              required
+            ></textarea>
+          </div>
+
+          <!-- Make Quiz Button -->
+          <button type="button" id="generate-btn" class="primary-btn">
+            <span>Make quiz</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </button>
+        </section>
+
+        <!-- Loading State Indicator -->
+        <div id="loading-state" class="loading-card">
+          <div class="spinner"></div>
+          <div class="loading-title">Generating your 8 quiz questions...</div>
+          <p class="loading-desc">Analyzing your lecture notes with Gemini to craft multiple-choice questions.</p>
+        </div>
+
+        <!-- Container for Quiz Questions and Results -->
+        <div id="quiz-container"></div>
+      </main>
+    </div>
+
+    <!-- Application Logic (Client-side) -->
+    <script>
+      (function() {
+        // DOM Elements
+        const inputSection = document.getElementById('input-section');
+        const lectureNotesInput = document.getElementById('lecture-notes');
+        const generateBtn = document.getElementById('generate-btn');
+        const sampleNotesBtn = document.getElementById('sample-notes-btn');
+        const errorAlert = document.getElementById('error-alert');
+        const errorMessageText = document.getElementById('error-message-text');
+        const loadingState = document.getElementById('loading-state');
+        const quizContainer = document.getElementById('quiz-container');
+
+        // Quiz State
+        let questions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let hasAnsweredCurrent = false;
+
+        // Sample lecture notes for quick testing
+        const SAMPLE_NOTES = `Photosynthesis is the biological process used by plants, algae, and cyanobacteria to convert light energy into chemical energy.
+Key Stages:
+1. Light-Dependent Reactions: Take place in the thylakoid membranes of chloroplasts. Chlorophyll absorbs sunlight and splits water molecules (photolysis), releasing oxygen (O2) as a byproduct. ATP and NADPH are generated.
+2. Light-Independent Reactions (Calvin Cycle): Take place in the stroma. Carbon dioxide (CO2) is fixed using the enzyme RuBisCO, consuming ATP and NADPH to synthesize glucose (G3P/sugar).
+Stomata are microscopic pores on leaves that regulate gas exchange and water transpiration. Guard cells control stomata opening and closing.`;
+
+        // Helper to display error banner
+        function showError(message) {
+          errorMessageText.textContent = message;
+          errorAlert.classList.add('visible');
+        }
+
+        // Helper to hide error banner
+        function hideError() {
+          errorAlert.classList.remove('visible');
+        }
+
+        // Populate sample notes on click
+        sampleNotesBtn.addEventListener('click', () => {
+          lectureNotesInput.value = SAMPLE_NOTES;
+          hideError();
+          lectureNotesInput.focus();
+        });
+
+        // Generate Quiz handler
+        generateBtn.addEventListener('click', async () => {
+          const notes = lectureNotesInput.value.trim();
+
+          if (!notes || notes.length < 20) {
+            showError('Please paste your lecture notes (at least a sentence or two) so Gemini can generate questions.');
+            lectureNotesInput.focus();
+            return;
+          }
+
+          hideError();
+          inputSection.style.display = 'none';
+          loadingState.classList.add('visible');
+          quizContainer.innerHTML = '';
+
+          try {
+            const response = await fetch('/api/generate-quiz', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ notes }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+              throw new Error(data.error || 'Failed to generate quiz questions. Please try again.');
+            }
+
+            if (!data.questions || !Array.isArray(data.questions) || data.questions.length === 0) {
+              throw new Error('Received an empty quiz from the server. Please check your notes and try again.');
+            }
+
+            // Save questions and initialize quiz
+            questions = data.questions;
+            currentQuestionIndex = 0;
+            score = 0;
+            loadingState.classList.remove('visible');
+
+            renderQuestion();
+          } catch (err) {
+            console.error('Quiz creation error:', err);
+            loadingState.classList.remove('visible');
+            inputSection.style.display = 'flex';
+            showError(err.message || 'Something went wrong while connecting to the server. Please try again.');
+          }
+        });
+
+        // Render current question (one question at a time)
+        function renderQuestion() {
+          hasAnsweredCurrent = false;
+          quizContainer.innerHTML = '';
+
+          const q = questions[currentQuestionIndex];
+          const questionNumber = currentQuestionIndex + 1;
+          const totalQuestions = questions.length;
+          const progressPercent = Math.round((questionNumber / totalQuestions) * 100);
+
+          const questionCard = document.createElement('div');
+          questionCard.style.display = 'flex';
+          questionCard.style.flexDirection = 'column';
+          questionCard.style.gap = '20px';
+
+          // Progress header
+          const header = document.createElement('div');
+          header.className = 'quiz-header';
+          header.innerHTML = `
+            <div class="quiz-meta">
+              <span class="q-count">Question ${questionNumber} of ${totalQuestions}</span>
+              <span class="score-pill">Score: ${score}</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" style="width: ${progressPercent}%;"></div>
+            </div>
+          `;
+          questionCard.appendChild(header);
+
+          // Question Prompt
+          const questionPrompt = document.createElement('h2');
+          questionPrompt.className = 'question-text';
+          questionPrompt.textContent = q.question;
+          questionCard.appendChild(questionPrompt);
+
+          // Options Container
+          const optionsList = document.createElement('div');
+          optionsList.className = 'options-list';
+
+          const optionLetters = ['A', 'B', 'C', 'D'];
+
+          q.options.forEach((optText, optIdx) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'option-btn';
+            btn.innerHTML = `
+              <span class="option-letter">${optionLetters[optIdx]}</span>
+              <span class="option-text">${escapeHtml(optText)}</span>
+            `;
+
+            btn.addEventListener('click', () => handleOptionSelect(optIdx, q, questionCard));
+            optionsList.appendChild(btn);
+          });
+
+          questionCard.appendChild(optionsList);
+          quizContainer.appendChild(questionCard);
+        }
+
+        // Handle answer selection
+        function handleOptionSelect(selectedIndex, q, questionCard) {
+          if (hasAnsweredCurrent) return;
+          hasAnsweredCurrent = true;
+
+          const isCorrect = selectedIndex === q.correctIndex;
+          if (isCorrect) {
+            score++;
+          }
+
+          // Update header score pill
+          const scorePill = questionCard.querySelector('.score-pill');
+          if (scorePill) scorePill.textContent = `Score: ${score}`;
+
+          // Disable and style all option buttons
+          const optionButtons = questionCard.querySelectorAll('.option-btn');
+          optionButtons.forEach((btn, idx) => {
+            btn.disabled = true;
+            if (idx === selectedIndex) {
+              if (isCorrect) {
+                btn.classList.add('selected-correct');
+              } else {
+                btn.classList.add('selected-wrong');
+              }
+            } else if (idx === q.correctIndex) {
+              // Highlight the correct answer if user got it wrong
+              btn.classList.add('reveal-correct');
+            }
+          });
+
+          // Explanation Box (Tell right or wrong with one-sentence explanation)
+          const feedbackBox = document.createElement('div');
+          feedbackBox.className = `feedback-box ${isCorrect ? 'correct' : 'wrong'}`;
+
+          const statusIcon = isCorrect ? '✓' : '✗';
+          const statusTitle = isCorrect ? 'Correct!' : 'Incorrect';
+
+          feedbackBox.innerHTML = `
+            <div class="feedback-status">
+              <span>${statusIcon}</span>
+              <span>${statusTitle}</span>
+            </div>
+            <div class="feedback-text">${escapeHtml(q.explanation)}</div>
+          `;
+          questionCard.appendChild(feedbackBox);
+
+          // Action button (Next Question or See Results)
+          const nextBtn = document.createElement('button');
+          nextBtn.type = 'button';
+          nextBtn.className = 'primary-btn';
+          nextBtn.style.marginTop = '4px';
+
+          const isLast = currentQuestionIndex === questions.length - 1;
+          nextBtn.innerHTML = `
+            <span>${isLast ? 'See Final Score' : 'Next Question'}</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          `;
+
+          nextBtn.addEventListener('click', () => {
+            if (isLast) {
+              renderResults();
+            } else {
+              currentQuestionIndex++;
+              renderQuestion();
+            }
+          });
+
+          questionCard.appendChild(nextBtn);
+        }
+
+        // Render Final Results Screen
+        function renderResults() {
+          quizContainer.innerHTML = '';
+
+          const total = questions.length;
+          const percentage = Math.round((score / total) * 100);
+
+          let message = 'Great job completing the quiz!';
+          let icon = '🎉';
+
+          if (score === total) {
+            message = 'Outstanding! You answered every question correctly.';
+            icon = '🏆';
+          } else if (score >= total * 0.75) {
+            message = 'Impressive work! You have a solid grasp of your lecture notes.';
+            icon = '🌟';
+          } else if (score >= total * 0.5) {
+            message = 'Good effort! Review the notes once more and give it another try.';
+            icon = '📚';
+          } else {
+            message = 'Keep practicing! Reviewing your notes will help these concepts stick.';
+            icon = '💪';
+          }
+
+          const resultsCard = document.createElement('div');
+          resultsCard.className = 'results-card';
+          resultsCard.innerHTML = `
+            <div class="results-icon">${icon}</div>
+            <h2 class="results-title">Quiz Completed!</h2>
+            <div class="score-display">${score} / ${total}</div>
+            <p class="score-message">You scored <strong>${percentage}%</strong>. ${message}</p>
+
+            <div class="results-actions">
+              <button type="button" id="try-again-btn" class="primary-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 4v6h6M23 20v-6h-6"/>
+                  <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
+                </svg>
+                <span>Try again</span>
+              </button>
+
+              <button type="button" id="new-notes-btn" class="secondary-btn">
+                <span>Quiz with new notes</span>
+              </button>
+            </div>
+          `;
+
+          quizContainer.appendChild(resultsCard);
+
+          // "Try again" button restarts the same quiz
+          document.getElementById('try-again-btn').addEventListener('click', () => {
+            currentQuestionIndex = 0;
+            score = 0;
+            renderQuestion();
+          });
+
+          // "Quiz with new notes" returns to the input form
+          document.getElementById('new-notes-btn').addEventListener('click', () => {
+            quizContainer.innerHTML = '';
+            inputSection.style.display = 'flex';
+            hideError();
+            lectureNotesInput.focus();
+          });
+        }
+
+        // HTML escaping utility for security
+        function escapeHtml(str) {
+          if (!str) return '';
+          return str
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+        }
+      })();
+    </script>
+  </body>
+</html>
